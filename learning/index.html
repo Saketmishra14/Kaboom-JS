@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #282c34;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+        #game {
+            border: 2px solid #61dafb;
+            background-color: #20232a;
+        }
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+    <script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
+    <script>
+        kaboom({
+            global: true,
+            fullscreen: true,
+            scale: 1,
+            clearColor: [0, 0, 0, 1],
+            debug: true,
+            crisp: true,
+        });
+
+        const SPEED = 120;
+        const snake = [];
+        let direction = vec2(1, 0);
+        let food = null;
+
+        function spawnFood() {
+            const pos = vec2(rand(0, width() / 16) * 16, rand(0, height() / 16) * 16);
+            food = add([
+                rect(16, 16),
+                pos,
+                color(255, 0, 0),
+                "food"
+            ]);
+        }
+
+        function growSnake() {
+            const pos = snake[snake.length - 1].pos.clone();
+            snake.push(add([
+                rect(16, 16),
+                pos,
+                color(0, 255, 0),
+                "snake"
+            ]));
+        }
+
+        function moveSnake() {
+            for (let i = snake.length - 1; i > 0; i--) {
+                snake[i].pos = snake[i - 1].pos.clone();
+            }
+            snake[0].move(direction.scale(SPEED));
+        }
+
+        function checkCollision() {
+            if (snake[0].pos.x < 0 || snake[0].pos.x >= width() || snake[0].pos.y < 0 || snake[0].pos.y >= height()) {
+                go("gameover");
+            }
+
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[0].pos.equals(snake[i].pos)) {
+                    go("gameover");
+                }
+            }
+
+            if (snake[0].isColliding(food)) {
+                destroy(food);
+                growSnake();
+                spawnFood();
+            }
+        }
+
+        scene("game", () => {
+            snake.push(add([
+                rect(16, 16),
+                pos(0, 0),
+                color(0, 255, 0),
+                "snake"
+            ]));
+
+            spawnFood();
+
+            keyPress("left", () => {
+                if (direction.x === 0) direction = vec2(-1, 0);
+            });
+
+            keyPress("right", () => {
+                if (direction.x === 0) direction = vec2(1, 0);
+            });
+
+            keyPress("up", () => {
+                if (direction.y === 0) direction = vec2(0, -1);
+            });
+
+            keyPress("down", () => {
+                if (direction.y === 0) direction = vec2(0, 1);
+            });
+
+            loop(0.1, () => {
+                moveSnake();
+                checkCollision();
+            });
+        });
+
+        scene("gameover", () => {
+            add([
+                text("Game Over", 32),
+                origin("center"),
+                pos(width() / 2, height() / 2)
+            ]);
+
+            keyPress("space", () => {
+                go("game");
+            });
+        });
+
+        start("game");
+    </script>
+</body>
+</html>
